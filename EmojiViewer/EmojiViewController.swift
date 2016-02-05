@@ -11,13 +11,13 @@ import UIKit
 class EmojiViewController: UIViewController, UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
   var emojiSelectedHandler: ((emoji: String) -> Void)?
   
+  @IBOutlet weak var emojiCollectionView: UICollectionView!
+  
   private let emojiCollectionViewColNum = 5
   private let sectionMargin = CGFloat(20)
   private var forceScroll = false
   private var emojiSectionSelectCollectionViewController: EmojiSectionSelectCollectionViewController!
   
-  @IBOutlet weak var emojiCollectionView: UICollectionView!
-
   private let labels = Emoji.categories.map { (category) -> UILabel in
     let label = UILabel()
     label.text = category
@@ -35,6 +35,25 @@ class EmojiViewController: UIViewController, UICollectionViewDelegate, UICollect
     labels[0].hidden = false
   }
   
+  func setSection(section: Int) {
+    forceScroll = true
+    emojiCollectionView.scrollToItemAtIndexPath(NSIndexPath(forRow: 0, inSection: section), atScrollPosition: .Left, animated: true)
+  }
+  
+  private var cellSize: CGSize {
+    let size = emojiCollectionView.frame.height / CGFloat(emojiCollectionViewColNum)
+    return CGSize(width: size, height: size)
+  }
+  
+  override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
+    if let vc = segue.destinationViewController as? EmojiSectionSelectCollectionViewController {
+      emojiSectionSelectCollectionViewController = vc
+      emojiSectionSelectCollectionViewController.emojiViewController = self
+    }
+  }
+  
+  // MARK: - UICollectionViewDataSource
+  
   func numberOfSectionsInCollectionView(collectionView: UICollectionView) -> Int {
     return Emoji.emojis.count
   }
@@ -48,7 +67,21 @@ class EmojiViewController: UIViewController, UICollectionViewDelegate, UICollect
     cell.emojiLabel.text = Emoji.emojis[indexPath.section][indexPath.row]
     return cell
   }
+  
+  func collectionView(collectionView: UICollectionView, viewForSupplementaryElementOfKind kind: String, atIndexPath indexPath: NSIndexPath) -> UICollectionReusableView {
+    let footer = collectionView.dequeueReusableSupplementaryViewOfKind(kind, withReuseIdentifier: "default", forIndexPath: indexPath)
+    footer.tag = indexPath.section + 10000
+    return footer
+  }
+  
+  // MARK: - UICollectionViewDelegate
 
+  func collectionView(collectionView: UICollectionView, didSelectItemAtIndexPath indexPath: NSIndexPath) {
+    emojiSelectedHandler?(emoji: Emoji.emojis[indexPath.section][indexPath.row])
+  }
+  
+  // MARK: - UICollectionViewDelegateFlowLayout
+  
   func collectionView(collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAtIndexPath indexPath: NSIndexPath) -> CGSize {
     return cellSize
   }
@@ -57,15 +90,7 @@ class EmojiViewController: UIViewController, UICollectionViewDelegate, UICollect
     return CGSize(width: sectionMargin, height: collectionView.frame.height)
   }
   
-  func collectionView(collectionView: UICollectionView, viewForSupplementaryElementOfKind kind: String, atIndexPath indexPath: NSIndexPath) -> UICollectionReusableView {
-    let footer = collectionView.dequeueReusableSupplementaryViewOfKind(kind, withReuseIdentifier: "default", forIndexPath: indexPath)
-    footer.tag = indexPath.section + 10000
-    return footer
-  }
-  
-  func collectionView(collectionView: UICollectionView, didSelectItemAtIndexPath indexPath: NSIndexPath) {
-    emojiSelectedHandler?(emoji: Emoji.emojis[indexPath.section][indexPath.row])
-  }
+  // MARK: - UIScrollViewDeleate
   
   func scrollViewDidEndScrollingAnimation(scrollView: UIScrollView) {
     forceScroll = false
@@ -105,23 +130,6 @@ class EmojiViewController: UIViewController, UICollectionViewDelegate, UICollect
           labels[currentSection].hidden = true
         }
       }
-    }
-  }
-  
-  private var cellSize: CGSize {
-    let size = emojiCollectionView.frame.height / CGFloat(emojiCollectionViewColNum)
-    return CGSize(width: size, height: size)
-  }
-  
-  func setSection(section: Int) {
-    forceScroll = true
-    emojiCollectionView.scrollToItemAtIndexPath(NSIndexPath(forRow: 0, inSection: section), atScrollPosition: .Left, animated: true)
-  }
-  
-  override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
-    if let vc = segue.destinationViewController as? EmojiSectionSelectCollectionViewController {
-      emojiSectionSelectCollectionViewController = vc
-      emojiSectionSelectCollectionViewController.emojiViewController = self
     }
   }
 }
